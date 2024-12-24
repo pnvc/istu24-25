@@ -276,7 +276,7 @@ struct abc sets_and(struct abc set1, struct abc set2)
 	for (int i = 0; set1.symbols[i]; i++) {
 		for (int j = 0; set2.symbols[j]; j++) {
 			if (!strcmp(set1.symbols[i], set2.symbols[j])) {
-				ret.symbols[ret_si] = malloc(strlen(set1.symbols[i]));
+				ret.symbols[ret_si] = calloc(strlen(set1.symbols[i]) + 1, sizeof (char));
 				strcpy(ret.symbols[ret_si++], set1.symbols[i]);
 			}
 		}
