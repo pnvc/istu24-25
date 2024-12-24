@@ -5,7 +5,7 @@
 
 #define BSIZE 1000
 #define OPERATIONS 50
-#define SSYMBOLS 32
+#define SSYMBOLS 128
 #define ABC 3
 #define ABCchar 0x41
 
@@ -26,6 +26,7 @@ struct abc sets_dif(struct abc set1, struct abc set2); // \
 int main()
 {
 	int ret, last_operation = 0;
+	char *nl; // new line detect and delete
 	char formula[BSIZE] = {0}; // here read formula from keyboard
 	char result[BSIZE] = {0}; // here result of whole programm that will be
 				  // printed
@@ -48,6 +49,7 @@ operands: A, B, C,\n");
 exit and again!\n");
 		return 1;
 	}
+	(nl = strchr(formula, '\n')) && (*nl = 0);
 	ret = sya_parse(sya_formula, formula, BSIZE); // parse into sya
 	if (ret)
 		return 2;
@@ -63,9 +65,12 @@ exit and again!\n");
 			return 3;
 		}
 
+		(nl = strchr(sets[i].buf, '\n')) && (*nl = 0);
+
 		// separate symbols in sets
-		for (char *c = sets[i].buf, g = 0, j = 0; *c && *c != '\n' &&
-							j < SSYMBOLS; c++){
+		for (char *c = sets[i].buf, g = 0, j = 0; *c && j < SSYMBOLS;
+				c++)
+		{
 			if (*c == '\n')
 				continue;
 			if (*c == ' ')
@@ -92,11 +97,13 @@ exit and again!\n");
 					ABCchar + i, j, sets[i].symbols[j]);
 	}
 
+	printf("A ^ B: ");
 	struct abc and = sets_and(sets[0], sets[1]);
 	for (int i = 0; and.symbols[i]; i++) {
-		printf("%s\n", and.symbols[i]);
+		printf("%s ", and.symbols[i]);
 		free(and.symbols[i]);
 	}
+	putchar('\n');
 
 	return 0;
 }
@@ -172,7 +179,6 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 				push_operator_stack(pop);
 			}
 			break;
-		case '\n':
 		case ' ':
 			break;
 		default:
@@ -271,21 +277,41 @@ void calculate_sya_sets(struct abc sets[3], char *sya_formula,
 struct abc sets_and(struct abc set1, struct abc set2)
 {
 	struct abc ret;
-	size_t ret_si = 0;
+	int ret_si = 0;
 	char *nlors;
-	for (int i = 0; set1.symbols[i]; i++) {
-		for (int j = 0; set2.symbols[j]; j++) {
-			if (!strcmp(set1.symbols[i], set2.symbols[j])) {
-				ret.symbols[ret_si] = calloc(strlen(set1.symbols[i]) + 1, sizeof (char));
-				strcpy(ret.symbols[ret_si++], set1.symbols[i]);
-			}
+	for (int i = 0; set1.symbols[i]; i++) { // here for in for
+	for (int j = 0; set2.symbols[j]; j++) {
+		if (!strcmp(set1.symbols[i], set2.symbols[j])) {
+			ret.symbols[ret_si] =
+				calloc(strlen(set1.symbols[i]) + 1,
+						sizeof (char));
+			strcpy(ret.symbols[ret_si++], set1.symbols[i]);
 		}
+	}
 	}
 	return ret;
 }
 struct abc sets_or(struct abc set1, struct abc set2)
 {
 	struct abc ret;
+	int ret_si = 0;
+	char already_in = 0;
+	for (int i = 0; set1.symbols[i]; i++) {
+		ret.symbols[ret_si] = calloc(strlen(set1.symbols[i]) + 1,
+				sizeof (char));
+		strcpy(ret.symbols[ret_si++], set1.symbols[i]);
+	}
+	for (int i = 0; ret.symbols[i]; i++) {
+	for (int j = 0; set2.symbols[j]; j++) {
+		if (!strcmp(ret.symbols[i], set2.symbols[j])) {
+			already_in = 1;
+			break;
+		}
+	}
+	if (!already_in) {
+		; // hmmmm...
+	}
+	}
 	return ret;
 }
 struct abc sets_dif(struct abc set1, struct abc set2)
