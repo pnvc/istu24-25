@@ -14,6 +14,19 @@ struct abc {
 	char *symbols[SSYMBOLS];
 };
 
+enum {
+	A = 0,
+	B,
+	C
+};
+
+enum {
+	AND = 0,
+	OR,
+	DIF,
+	XOR
+};
+
 int read_row(char *buf, size_t bsize);
 int sya_parse(char *dest, const char *src, size_t dssize);
 void calculate_sya_sets(struct abc sets[3], char *sya_formula,
@@ -23,6 +36,9 @@ struct abc sets_and(struct abc set1, struct abc set2); // ^
 struct abc sets_or(struct abc set1, struct abc set2); // v
 struct abc sets_dif(struct abc set1, struct abc set2); // -
 struct abc sets_xor(struct abc set1, struct abc set2); // xor
+struct abc (*sets_ops[4])(struct abc set1, struct abc set2) = {
+	sets_and, sets_or, sets_dif, sets_xor
+};
 
 int main()
 {
@@ -54,8 +70,9 @@ exit and again!\n");
 	ret = sya_parse(sya_formula, formula, BSIZE); // parse into sya
 	if (ret)
 		return 2;
-	printf("%s\n", sya_formula); // printf SYA formula looks like
+	printf("SYA formula: %s\n", sya_formula);//printf SYA formula looks like
 
+	printf("Enter A, B and C sets (spaces are separators of elements)\n");
 
 	for (int i = 0; i < ABC; i++) {
 		printf("%c: ", ABCchar + i); // read sets of A, B and C
@@ -89,6 +106,9 @@ exit and again!\n");
 	calculate_sya_sets(sets, sya_formula, strlen(sya_formula), result,
 			sizeof result);
 
+	printf("RESULT: { %s }\n", result);
+
+	/*
 	printf("------------------------ debug -------------------\n");
 	printf("Formula: %s\n", formula);
 	for (int i = 0, j = 0; i < ABC; j++) {
@@ -130,6 +150,7 @@ exit and again!\n");
 		free(xor.symbols[i]);
 	}
 	putchar('\n');
+	*/
 
 	return 0;
 }
@@ -259,24 +280,54 @@ void pop_operator_handle_prio_and_push_or_into_dest(char n, char *dest,
 	}
 }
 
+
+
 void calculate_sya_sets(struct abc sets[3], char *sya_formula,
 		size_t sya_formula_len, char *result, size_t rsize)
 {
+	struct abc operands[100] = {0};
+	struct abc tmp = {0};
+	int operands_i = 0;
+	int operand1, operand2;
+	int op = -1;
 	for (size_t i = 0; i < sya_formula_len; i++) {
 		switch (sya_formula[i]) {
-		case '^':
-			break;
-		case 'v':
-			break;
-		case '\\':
-			break;
-		case 'A':
-			break;
-		case 'B':
-			break;
-		case 'C':
-			break;
+		case '~': op = XOR; break;
+		case '^': op = AND; break;
+		case 'v': op = OR; break;
+		case '\\': op = DIF; break;
+		case 'A': case 'B': case 'C':
+			   operands[operands_i++] = sets[sya_formula[i] - 'A'];
 		}
+		if (op > -1) {
+			operand1 = operands_i - 2;
+			operand2 = operands_i - 1;
+			tmp = sets_ops[op](operands[operand1],
+					operands[operand2]);
+			if (!operands[operand1].buf) {
+				for (int j = 0; operands[operand1].symbols[j];
+						j++)
+					free(operands[operand1].symbols[j]);
+			}
+			if (!operands[operand2].buf) {
+				for (int j = 0; operands[operand2].symbols[j];
+						j++)
+					free(operands[operand2].symbols[j]);
+			}
+			operands[operand1] = tmp;
+			operands_i = operand2;
+			op = -1;
+		}
+	}
+
+	size_t last_result_len;
+	for (int i = 0; operands[0].symbols[i]; i++) {
+		if (last_result_len) {
+			*(result + last_result_len++) = ' ';
+		}
+		strcpy(result + last_result_len, operands[0].symbols[i]);
+		free(operands[0].symbols[i]);
+		last_result_len = strlen(result);
 	}
 }
 
