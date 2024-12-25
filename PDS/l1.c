@@ -1,3 +1,4 @@
+// here no error check after calloc
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -49,7 +50,7 @@ operators:'(' ')' '\\'(difference) 'v'(OR) '^'(AND) '~'(XOR(delta in lab task))\
 exit and again!\n");
 		return 1;
 	}
-	(nl = strchr(formula, '\n')) && (*nl = 0);
+	(nl = strchr(formula, '\n')) && (*nl = 0); // remove newline symbol
 	ret = sya_parse(sya_formula, formula, BSIZE); // parse into sya
 	if (ret)
 		return 2;
@@ -65,6 +66,7 @@ exit and again!\n");
 			return 3;
 		}
 
+		// remove newline symbol
 		(nl = strchr(sets[i].buf, '\n')) && (*nl = 0);
 
 		// separate symbols in sets
@@ -344,13 +346,14 @@ struct abc sets_dif(struct abc set1, struct abc set2)
 }
 struct abc sets_xor(struct abc set1, struct abc set2)
 {
-	struct abc tmp, ret;
+	struct abc tmp, tmp2, ret;
 	tmp = sets_dif(set1, set2);
-	ret = tmp;
-	tmp = sets_dif(set2, set1);
-	ret = sets_or(ret, tmp);
+	tmp2 = sets_dif(set2, set1);
+	ret = sets_or(tmp, tmp2);
 	for (int i = 0; tmp.symbols[i]; i++)
 		free(tmp.symbols[i]);
+	for (int i = 0; tmp2.symbols[i]; i++)
+		free(tmp2.symbols[i]);
 	return ret;
 }
 
