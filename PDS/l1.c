@@ -59,6 +59,8 @@ int main()
 	printf("Next symbols are available for formula: \
 operators:'(' ')' '\\'(difference) 'v'(OR) '^'(AND) '~'(XOR(delta in lab task))\
 \noperands: A, B, C\n");
+	printf("Prioritets from highest to lowest:\n\
+	() -> ^ -> v -> \\ -> ~\n");
 	printf("Enter formula: ");
 	ret = read_row(formula, BSIZE); // read formula
 	if (ret) {
@@ -179,7 +181,7 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 			break;
 		default:
 			printf("exit: unexpected symbol, available: \
-^ v \\ A B C\n");
+^ v \\ ~ A B C\n");
 			return 1;
 		}
 	}
