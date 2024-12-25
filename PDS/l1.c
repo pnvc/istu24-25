@@ -164,7 +164,7 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 			break;
 		case ')':
 			if (!bracket_level) {
-				printf("bad brackets, exit");
+				printf("bad brackets, exit\n");
 				exit(1);
 			}
 			bracket_level--;
