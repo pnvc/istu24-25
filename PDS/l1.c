@@ -72,7 +72,6 @@ exit and again!\n");
 	ret = sya_parse(sya_formula, formula, BSIZE); // parse into sya
 	if (ret)
 		return 2;
-	printf("SYA formula: %s\n", sya_formula);//printf SYA formula looks like
 
 	printf("Enter A, B and C sets (spaces are separators of elements)\n");
 
