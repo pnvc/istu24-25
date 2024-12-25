@@ -4,7 +4,6 @@
 #include <stdlib.h>
 
 #define BSIZE 1000
-#define OPERATIONS 50
 #define SSYMBOLS 128
 #define ABC 3
 #define ABCchar 0x41
@@ -41,8 +40,8 @@ int main()
 
 	printf("Lab work 1\n");
 	printf("Next symbols are available for formula: \
-operators: (, ), \\(difference), v(OR), ^(AND), ~(XOR)\n\
-operands: A, B, C,\n");
+operators:'(' ')' '\\'(difference) 'v'(OR) '^'(AND) '~'(XOR(delta in lab task))\
+\noperands: A, B, C\n");
 	printf("Enter formula: ");
 	ret = read_row(formula, BSIZE); // read formula
 	if (ret) {
@@ -284,7 +283,7 @@ struct abc sets_and(struct abc set1, struct abc set2)
 	struct abc ret = {.symbols = {0}};
 	int ret_si = 0;
 	char *nlors;
-	for (int i = 0; set1.symbols[i]; i++) { // here for in for
+	for (int i = 0; set1.symbols[i]; i++) { // for2 in for1
 	for (int j = 0; set2.symbols[j]; j++) {
 		if (!strcmp(set1.symbols[i], set2.symbols[j])) {
 			ret.symbols[ret_si] =
@@ -292,8 +291,8 @@ struct abc sets_and(struct abc set1, struct abc set2)
 						sizeof (char));
 			strcpy(ret.symbols[ret_si++], set1.symbols[i]);
 		}
-	}
-	}
+	} // end for2
+	} // end for1
 	return ret;
 }
 struct abc sets_or(struct abc set1, struct abc set2)
@@ -306,20 +305,20 @@ struct abc sets_or(struct abc set1, struct abc set2)
 				sizeof (char));
 		strcpy(ret.symbols[ret_si++], set1.symbols[i]);
 	}
-	for (int i = 0; set2.symbols[i]; i++) { // for in for
+	for (int i = 0; set2.symbols[i]; i++) { // for2 in for1
 	for (int j = 0; ret.symbols[j]; j++) {
 		if (!strcmp(set2.symbols[i], ret.symbols[j])) {
 			already_in = 1;
 			break;
 		}
-	}
+	} // end for2
 	if (!already_in) {
 		ret.symbols[ret_si] = calloc(strlen(set2.symbols[i]) + 1,
 				sizeof (char));
 		strcpy(ret.symbols[ret_si++], set2.symbols[i]);
 	} else
 		already_in = 0;
-	}
+	} // end for1
 	return ret;
 }
 struct abc sets_dif(struct abc set1, struct abc set2)
@@ -361,10 +360,9 @@ int set_contains(const char * const symbols[SSYMBOLS], char *need)
 	char nlors;
 	int ret = 0;
 	// in need is full string while parsing
-	// so, temporary need end string by \0 symbol:
+	// so, temporary need end string elements by \0 symbol insted ' 'or'\n':
 	// try find ' ' or '\n' and set there \0
 	// in the end: restore this value
-	// to continue parsing
 	if (!(nlors_ptr = strchr(need, ' ')))
 		nlors_ptr = strchr(need, '\n');
 	if (nlors_ptr) {
