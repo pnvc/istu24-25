@@ -108,50 +108,6 @@ exit and again!\n");
 
 	printf("RESULT: { %s }\n", result);
 
-	/*
-	printf("------------------------ debug -------------------\n");
-	printf("Formula: %s\n", formula);
-	for (int i = 0, j = 0; i < ABC; j++) {
-		if (!sets[i].symbols[j]) {
-			j = -1; i++; putchar(10);
-		} else
-			printf("%c[%d]: %s ",
-					ABCchar + i, j, sets[i].symbols[j]);
-	}
-
-	printf("A ^ B: ");
-	struct abc and = sets_and(sets[0], sets[1]);
-	for (int i = 0; and.symbols[i]; i++) {
-		printf("%s ", and.symbols[i]);
-		free(and.symbols[i]);
-	}
-	putchar('\n');
-
-	printf("A v B: ");
-	struct abc or = sets_or(sets[0], sets[1]);
-	for (int i = 0; or.symbols[i]; i++) {
-		printf("%s ", or.symbols[i]);
-		free(or.symbols[i]);
-	}
-	putchar('\n');
-
-	printf("A \\ B: ");
-	struct abc dif = sets_dif(sets[0], sets[1]);
-	for (int i = 0; dif.symbols[i]; i++) {
-		printf("%s ", dif.symbols[i]);
-		free(dif.symbols[i]);
-	}
-	putchar('\n');
-
-	printf("A ~ B: ");
-	struct abc xor = sets_xor(sets[0], sets[1]);
-	for (int i = 0; xor.symbols[i]; i++) {
-		printf("%s ", xor.symbols[i]);
-		free(xor.symbols[i]);
-	}
-	putchar('\n');
-	*/
-
 	return 0;
 }
 
