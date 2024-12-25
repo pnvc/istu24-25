@@ -21,7 +21,8 @@ void calculate_sya_sets(struct abc sets[3], char *sya_formula,
 int set_contains(const char * const symbols[SSYMBOLS], char *need);
 struct abc sets_and(struct abc set1, struct abc set2); // ^
 struct abc sets_or(struct abc set1, struct abc set2); // v
-struct abc sets_dif(struct abc set1, struct abc set2); // \
+struct abc sets_dif(struct abc set1, struct abc set2); // -
+struct abc sets_xor(struct abc set1, struct abc set2); // xor
 
 int main()
 {
@@ -40,7 +41,7 @@ int main()
 
 	printf("Lab work 1\n");
 	printf("Next symbols are available for formula: \
-operators: (, ), \\, v, ^\n\
+operators: (, ), \\(difference), v(OR), ^(AND), ~(XOR)\n\
 operands: A, B, C,\n");
 	printf("Enter formula: ");
 	ret = read_row(formula, BSIZE); // read formula
@@ -105,6 +106,30 @@ exit and again!\n");
 	}
 	putchar('\n');
 
+	printf("A v B: ");
+	struct abc or = sets_or(sets[0], sets[1]);
+	for (int i = 0; or.symbols[i]; i++) {
+		printf("%s ", or.symbols[i]);
+		free(or.symbols[i]);
+	}
+	putchar('\n');
+
+	printf("A \\ B: ");
+	struct abc dif = sets_dif(sets[0], sets[1]);
+	for (int i = 0; dif.symbols[i]; i++) {
+		printf("%s ", dif.symbols[i]);
+		free(dif.symbols[i]);
+	}
+	putchar('\n');
+
+	printf("A ~ B: ");
+	struct abc xor = sets_xor(sets[0], sets[1]);
+	for (int i = 0; xor.symbols[i]; i++) {
+		printf("%s ", xor.symbols[i]);
+		free(xor.symbols[i]);
+	}
+	putchar('\n');
+
 	return 0;
 }
 
@@ -123,13 +148,9 @@ int read_row(char *buf, size_t bsize)
 
 #define STACKSIZE 1000
 int operator_ptr = 0;
-int operand_ptr = 0;
-char operand_stack[STACKSIZE];
 char operator_stack[STACKSIZE];
 int push_operator_stack(char n);
 int pop_operator_stack();
-int push_operand_stack(char n);
-int pop_operand_stack();
 void pop_operator_handle_prio_and_push_or_into_dest(char n, char *dest,
 		size_t *dpos);
 int sya_parse(char *dest, const char *src, size_t dssize)
@@ -145,16 +166,13 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 		case '^':	// prio 1
 		case 'v':	// prio 2
 		case '\\':	// prio 3
+		case '~':	// prio 4
 			pop_operator_handle_prio_and_push_or_into_dest(src[i],
 					dest, &k);
 			break;
 		case 'A':
 		case 'B':
 		case 'C':
-			if (push_operand_stack(src[i]) < 0) {
-				printf("operand stack overflow, exit\n");
-				exit(1);
-			}
 			dest[k++] = src[i];
 			break;
 		case '(':
@@ -207,21 +225,6 @@ int pop_operator_stack()
 	operator_stack[operator_ptr] = 0;
 	return ret;
 }
-int push_operand_stack(char n)
-{
-	if (operand_ptr >= STACKSIZE)
-		return -1;
-	return (operand_stack[operand_ptr++] = n);
-}
-int pop_operand_stack()
-{
-	int ret;
-	if (!operand_ptr)
-		return -1;
-	ret = operand_stack[--operand_ptr];
-	operand_stack[operand_ptr] = 0;
-	return ret;
-}
 void pop_operator_handle_prio_and_push_or_into_dest(char n, char *dest,
 		size_t *dpos)
 {
@@ -240,10 +243,12 @@ void pop_operator_handle_prio_and_push_or_into_dest(char n, char *dest,
 		if (pop == '^') prio_pop = 1;
 		else if (pop == 'v') prio_pop = 2;
 		else if (pop == '\\') prio_pop = 3;
+		else if (pop == '~') prio_pop = 4;
 
 		if (n == '^') prio_n = 1;
 		else if (n == 'v') prio_n = 2;
 		else if (n == '\\') prio_n = 3;
+		else if (n == '~') prio_n = 4;
 
 		if (prio_pop < prio_n)
 			dest[(*dpos)++] = pop;
@@ -276,7 +281,7 @@ void calculate_sya_sets(struct abc sets[3], char *sya_formula,
 
 struct abc sets_and(struct abc set1, struct abc set2)
 {
-	struct abc ret;
+	struct abc ret = {.symbols = {0}};
 	int ret_si = 0;
 	char *nlors;
 	for (int i = 0; set1.symbols[i]; i++) { // here for in for
@@ -293,7 +298,7 @@ struct abc sets_and(struct abc set1, struct abc set2)
 }
 struct abc sets_or(struct abc set1, struct abc set2)
 {
-	struct abc ret;
+	struct abc ret = {.symbols = {0}};
 	int ret_si = 0;
 	char already_in = 0;
 	for (int i = 0; set1.symbols[i]; i++) {
@@ -301,22 +306,52 @@ struct abc sets_or(struct abc set1, struct abc set2)
 				sizeof (char));
 		strcpy(ret.symbols[ret_si++], set1.symbols[i]);
 	}
-	for (int i = 0; ret.symbols[i]; i++) {
-	for (int j = 0; set2.symbols[j]; j++) {
-		if (!strcmp(ret.symbols[i], set2.symbols[j])) {
+	for (int i = 0; set2.symbols[i]; i++) { // for in for
+	for (int j = 0; ret.symbols[j]; j++) {
+		if (!strcmp(set2.symbols[i], ret.symbols[j])) {
 			already_in = 1;
 			break;
 		}
 	}
 	if (!already_in) {
-		; // hmmmm...
-	}
+		ret.symbols[ret_si] = calloc(strlen(set2.symbols[i]) + 1,
+				sizeof (char));
+		strcpy(ret.symbols[ret_si++], set2.symbols[i]);
+	} else
+		already_in = 0;
 	}
 	return ret;
 }
 struct abc sets_dif(struct abc set1, struct abc set2)
 {
-	struct abc ret;
+	struct abc ret = {.symbols = {0}};
+	int ret_si = 0;
+	char need_del = 0;
+	for (int i = 0; set1.symbols[i]; i++) { // for2 in for1
+	for (int j = 0; set2.symbols[j]; j++) {
+		if (!strcmp(set1.symbols[i], set2.symbols[j])) {
+			need_del = 1;
+			break;
+		}
+	} // end for2
+	if (!need_del) {
+		ret.symbols[ret_si] = calloc(strlen(set1.symbols[i]) + 1,
+				sizeof (char));
+		strcpy(ret.symbols[ret_si++], set1.symbols[i]);
+	} else
+		need_del = 0;
+	} // end for1
+	return ret;
+}
+struct abc sets_xor(struct abc set1, struct abc set2)
+{
+	struct abc tmp, ret;
+	tmp = sets_dif(set1, set2);
+	ret = tmp;
+	tmp = sets_dif(set2, set1);
+	ret = sets_or(ret, tmp);
+	for (int i = 0; tmp.symbols[i]; i++)
+		free(tmp.symbols[i]);
 	return ret;
 }
 
