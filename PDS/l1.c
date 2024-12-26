@@ -79,6 +79,7 @@ exit and again!\n");
 		printf("Need min 3 symbols for formula\n");
 		return 1;
 	}
+	printf("%s\n", sya_formula);
 
 	printf("Enter A, B and C sets (spaces are separators of elements)\n");
 
@@ -156,8 +157,16 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 	char new, prio_new;
 	int bracket_level = 0;
 	size_t k, i;
+	char prev_sym = 0;
 	for (k = i = 0; i < dssize && k < dssize && src[i]; i++) {
 		new = src[i];
+		if ((prev_sym >= 'A' && prev_sym <= 'C' && new >= 'A' &&
+				new <= 'C') 
+				||
+				(prev_sym >= '\\' && new >= '\\')) {
+			printf("Bad symbol sequence (like AB or A^vB), exit\n");
+			exit(1);
+		}
 		switch (new) {
 		case '*':	// forget for now
 			printf("* operator unavailable for now, exit\n");
@@ -221,6 +230,12 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 ^ v \\ ~ A B C\n");
 			return 1;
 		}
+		prev_sym = new;
+	}
+
+	if (bracket_level) {
+		printf("bad brackets, exit\n");
+		exit(1);
 	}
 
 	while ((pop = pop_operator_stack()) != -1)
