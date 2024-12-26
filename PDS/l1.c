@@ -79,7 +79,6 @@ exit and again!\n");
 		printf("Need min 3 symbols for formula\n");
 		return 1;
 	}
-	printf("%s\n", sya_formula);
 
 	printf("Enter A, B and C sets (spaces are separators of elements)\n");
 
