@@ -95,13 +95,16 @@ exit and again!\n");
 		// remove newline symbol
 		(nl = strchr(sets[i].buf, '\n')) && (*nl = 0);
 
+		char *c = sets[i].buf;
+		while (*c == ' ' || *c == '\t') c++;
+
 		// separate symbols in sets
-		for (char *c = sets[i].buf, g = 0, j = 0; *c && j < SSYMBOLS;
+		for (char g = 0, j = 0; *c && j < SSYMBOLS;
 				c++)
 		{
 			if (*c == '\n')
 				continue;
-			if (*c == ' ')
+			if (*c == ' ' || *c == '\t')
 				g = *c = 0;
 			else if (!g++) {
 				if (!set_contains((const char * const *)
