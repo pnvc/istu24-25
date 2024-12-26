@@ -1,4 +1,7 @@
 // here no error check after calloc
+// also no error check for correct input of formula, for example:
+// 	if you instead "AvB" entered "vAB" or "ABv" etc:
+// 		there is undefined behavior
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -61,7 +64,7 @@ operators:'(' ')' '\\'(difference) 'v'(OR) '^'(AND) '~'(XOR(delta in lab task))\
 \noperands: A, B, C\n");
 	printf("Prioritets from highest to lowest:\n\
 	() -> ^ -> v -> \\ -> ~\n");
-	printf("Enter formula: ");
+	printf("Enter formula (min 3 symbols, e.g.: 'AvB'): ");
 	ret = read_row(formula, BSIZE); // read formula
 	if (ret) {
 		printf("\nentered end of file symbol (formula), \
@@ -72,6 +75,11 @@ exit and again!\n");
 	ret = sya_parse(sya_formula, formula, BSIZE); // parse into sya
 	if (ret)
 		return 2;
+	if (strlen(sya_formula) < 3) {
+		printf("Need min 3 symbols for formula\n");
+		return 1;
+	}
+	printf("%s\n", sya_formula);
 
 	printf("Enter A, B and C sets (spaces are separators of elements)\n");
 
@@ -130,14 +138,25 @@ int operator_ptr = 0;
 char operator_stack[STACKSIZE];
 int push_operator_stack(char n);
 int pop_operator_stack();
-void pop_operator_handle_prio_and_push_or_into_dest(char n, char *dest,
-		size_t *dpos);
+int get_op_prio(char op)
+{
+	switch (op) {
+		case '^' : return 1;
+		case 'v' : return 2;
+		case '\\': return 3;
+		case '~' : return 4;
+	}
+	return 0;
+}
 int sya_parse(char *dest, const char *src, size_t dssize)
 {
-	char pop;
+	char pop, prio_pop;
+	char new, prio_new;
 	int bracket_level = 0;
-	for (size_t i = 0, k = 0; i < dssize && k < dssize && src[i]; i++) {
-		switch (src[i]) {
+	size_t k, i;
+	for (k = i = 0; i < dssize && k < dssize && src[i]; i++) {
+		new = src[i];
+		switch (new) {
 		case '*':	// forget for now
 			printf("* operator unavailable for now, exit\n");
 			exit(1);
@@ -146,17 +165,39 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 		case 'v':	// prio 2
 		case '\\':	// prio 3
 		case '~':	// prio 4
-			pop_operator_handle_prio_and_push_or_into_dest(src[i],
-					dest, &k);
+			pop = pop_operator_stack();
+			if (pop < 0 || (pop == '(' && push_operator_stack(pop)))
+				push_operator_stack(new);
+			else {
+				prio_new = get_op_prio(new);
+				prio_pop = get_op_prio(pop);
+				
+				push_operator_stack(pop);
+
+				if (prio_new <= prio_pop) {
+					push_operator_stack(new);
+					break;
+				}
+
+				while ((pop = pop_operator_stack()) > -1 &&
+						pop != '(' &&
+						(prio_pop = get_op_prio(pop)) <=
+						 prio_new) {
+					dest[k++] = pop;
+				}
+				if (pop > -1)
+					push_operator_stack(pop);
+				push_operator_stack(new);
+			}
 			break;
 		case 'A':
 		case 'B':
 		case 'C':
-			dest[k++] = src[i];
+			dest[k++] = new;
 			break;
 		case '(':
 			bracket_level++;
-			if (push_operator_stack(src[i]) < 0) {
+			if (push_operator_stack(new) < 0) {
 				printf("operator stack overflow, exit\n");
 				exit(1);
 			}
@@ -170,11 +211,13 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 			while ((pop = pop_operator_stack()) != '(') {
 				dest[k++] = pop;
 			}
+			/*
 			if (bracket_level) {
 				while ((pop = pop_operator_stack()) != '(')
 					dest[k++] = pop;
 				push_operator_stack(pop);
 			}
+			*/
 			break;
 		case ' ':
 			break;
@@ -184,8 +227,9 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 			return 1;
 		}
 	}
-	if (operator_stack)
-		strcpy(dest + strlen(dest), operator_stack);
+
+	while ((pop = pop_operator_stack()) != -1)
+		dest[k++] = pop;
 	return 0;
 }
 
@@ -204,40 +248,6 @@ int pop_operator_stack()
 	operator_stack[operator_ptr] = 0;
 	return ret;
 }
-void pop_operator_handle_prio_and_push_or_into_dest(char n, char *dest,
-		size_t *dpos)
-{
-	int prio_n = 0;
-	int prio_pop = 0;
-	int pop = pop_operator_stack();
-	if (pop < 0)
-		push_operator_stack(n);
-	else {
-		if (pop == '(') {
-			push_operator_stack(pop);
-			push_operator_stack(n);
-			return;
-		}
-
-		if (pop == '^') prio_pop = 1;
-		else if (pop == 'v') prio_pop = 2;
-		else if (pop == '\\') prio_pop = 3;
-		else if (pop == '~') prio_pop = 4;
-
-		if (n == '^') prio_n = 1;
-		else if (n == 'v') prio_n = 2;
-		else if (n == '\\') prio_n = 3;
-		else if (n == '~') prio_n = 4;
-
-		if (prio_pop < prio_n)
-			dest[(*dpos)++] = pop;
-		else
-			push_operator_stack(pop);
-		push_operator_stack(n);
-	}
-}
-
-
 
 void calculate_sya_sets(struct abc sets[3], char *sya_formula,
 		size_t sya_formula_len, char *result, size_t rsize)
