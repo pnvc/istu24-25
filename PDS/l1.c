@@ -211,13 +211,6 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 			while ((pop = pop_operator_stack()) != '(') {
 				dest[k++] = pop;
 			}
-			/*
-			if (bracket_level) {
-				while ((pop = pop_operator_stack()) != '(')
-					dest[k++] = pop;
-				push_operator_stack(pop);
-			}
-			*/
 			break;
 		case ' ':
 			break;
@@ -271,12 +264,12 @@ void calculate_sya_sets(struct abc sets[3], char *sya_formula,
 			operand2 = operands_i - 1;
 			tmp = sets_ops[op](operands[operand1],
 					operands[operand2]);
-			if (!operands[operand1].buf) {
+			if (!*operands[operand1].buf) {
 				for (int j = 0; operands[operand1].symbols[j];
 						j++)
 					free(operands[operand1].symbols[j]);
 			}
-			if (!operands[operand2].buf) {
+			if (!*operands[operand2].buf) {
 				for (int j = 0; operands[operand2].symbols[j];
 						j++)
 					free(operands[operand2].symbols[j]);
