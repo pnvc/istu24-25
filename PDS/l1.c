@@ -185,7 +185,7 @@ int sya_parse(char *dest, const char *src, size_t dssize)
 				
 				push_operator_stack(pop);
 
-				if (prio_new <= prio_pop) {
+				if (prio_new < prio_pop) {
 					push_operator_stack(new);
 					break;
 				}
